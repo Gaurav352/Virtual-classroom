@@ -81,7 +81,7 @@ export const askQuestion = async (req, res) => {
    
     console.log("GOOGLE_API_KEY loaded:", process.env.GOOGLE_API_KEY,question);
     const llm = new ChatGoogleGenerativeAI({
-      apiKey:'AIzaSyBXh5r976JV1H6B0Q7HAeDBD-Pbpz5kLCk',
+      apiKey:process.env.GOOGLE_API_KEY,
       
       model: "gemini-2.0-flash-lite", // Use a powerful Gemini model
     });
