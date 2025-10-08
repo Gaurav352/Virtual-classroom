@@ -1,13 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "../zustand/authStore";
 
 const Register = () => {
+  const { signup, isSigningUp } = useAuthStore();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await signup({ name, email, password });
+  };
+
   return (
-    <section
-      id="register"
-      className="min-h-screen flex items-center justify-center bg-[#0A192F]"
-    >
-      <div className="flex flex-col md:flex-row-reverse items-center justify-center gap-12 container mx-auto px-6">
+    <section className="min-h-screen flex items-center justify-center bg-[#0A192F]">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-12 container mx-auto px-6">
+        {/* Image Section */}
+        <div className="w-full max-w-md hidden md:block">
+          <img
+            src="logo.webp"
+            alt="Group of students collaborating"
+            className="rounded-lg shadow-xl w-full h-auto object-cover"
+          />
+        </div>
+
         {/* Form Section */}
         <div className="bg-[#112240] p-8 rounded-lg shadow-xl w-full max-w-md">
           <h2 className="text-3xl font-bold text-center text-[#CCD6F6] mb-2">
@@ -17,62 +34,68 @@ const Register = () => {
             Get started with AudioLize today.
           </p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label
-                className="block text-[#CCD6F6] text-sm font-bold mb-2"
                 htmlFor="register-name"
+                className="block text-[#CCD6F6] text-sm font-bold mb-2"
               >
                 Name
               </label>
               <input
-                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
                 id="register-name"
                 type="text"
                 placeholder="Gaurav"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
               />
             </div>
+
             <div className="mb-4">
               <label
-                className="block text-[#CCD6F6] text-sm font-bold mb-2"
                 htmlFor="register-email"
+                className="block text-[#CCD6F6] text-sm font-bold mb-2"
               >
                 Email
               </label>
               <input
-                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
                 id="register-email"
                 type="email"
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
               />
             </div>
 
             <div className="mb-4">
               <label
-                className="block text-[#CCD6F6] text-sm font-bold mb-2"
                 htmlFor="register-password"
+                className="block text-[#CCD6F6] text-sm font-bold mb-2"
               >
                 Password
               </label>
               <input
-                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
                 id="register-password"
                 type="password"
                 placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-[#0A192F] border border-[#233554] text-[#CCD6F6] rounded-md py-2 px-3 focus:outline-none focus:border-[#64FFDA]"
               />
             </div>
 
-            <div className="flex items-center justify-between mb-6">
-              <button
-                className="w-full bg-[#64FFDA] text-[#0A192F] font-bold py-2 px-4 rounded-md hover:bg-opacity-90 transition-all duration-300"
-                type="button"
-              >
-                Sign Up
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isSigningUp}
+              className="w-full bg-[#64FFDA] text-[#0A192F] font-bold py-2 px-4 rounded-md hover:bg-opacity-90 transition-all duration-300 mb-4"
+            >
+              {isSigningUp ? "Signing Up..." : "Sign Up"}
+            </button>
           </form>
 
-          <p className="text-center text-sm text-[#8892B0] mt-8">
+          <p className="text-center text-sm text-[#8892B0] mt-4">
             Already have an account?{" "}
             <Link
               to="/login"
@@ -81,15 +104,6 @@ const Register = () => {
               Sign In
             </Link>
           </p>
-        </div>
-
-        {/* Image Section */}
-        <div className="w-full max-w-md hidden md:block">
-          <img
-            src="logo.webp"
-            alt="Group of students collaborating"
-            className="rounded-lg shadow-xl w-full h-auto object-cover"
-          />
         </div>
       </div>
     </section>
