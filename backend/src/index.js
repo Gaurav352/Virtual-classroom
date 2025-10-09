@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import documentRoutes from "./routes/document.route.js";
 import { connectDB } from "./utils/db.js";
 import authRoutes from "./routes/auth.route.js"
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors({
   methods: ["PUT", "PATCH", "GET", "POST", "DELETE"],
   credentials: true,
 }));
+app.use(cookieParser());
 
 app.use(express.json());
 

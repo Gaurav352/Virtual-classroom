@@ -6,6 +6,7 @@ import { useAuthStore } from "../zustand/authStore";
 export const Hero = () => {
     const navigate = useNavigate();
     const {authUser}=useAuthStore();
+    console.log("H1",authUser);
     return (
   <section id="features" className="bg-[#0A192F] text-[#CCD6F6]">
     <div className="container mx-auto px-6 py-20 md:py-32 text-center">

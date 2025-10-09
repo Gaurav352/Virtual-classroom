@@ -17,7 +17,8 @@ const Login = () => {
       toast.error("Please fill all fields");
       return;
     }
-    login(form, navigate);
+    login(form);
+    navigate("/");
   };
 
   return (

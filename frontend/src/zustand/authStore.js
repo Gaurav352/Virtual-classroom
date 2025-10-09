@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export const useAuthStore = create((set, get) => ({
+  
   authUser: null,
   isSigningUp: false,
   isLoggingIn: false,
@@ -10,11 +12,7 @@ export const useAuthStore = create((set, get) => ({
 
   getMe: async () => {
     try {
-      const res = await axiosInstance.get("/auth/getme", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const res = await axiosInstance.get("/auth/me");
       set({ authUser: res.data });
     } catch (error) {
       console.log("Error in getMe:", error.response?.data || error.message);
@@ -27,9 +25,10 @@ export const useAuthStore = create((set, get) => ({
   signup: async (data, navigate) => {
     try {
       set({ isSigningUp: true });
-      await axiosInstance.post("/auth/signup", data);
-      toast.success("Account created successfully! Please login.");
-      navigate("/login"); // redirect to login
+      const res = await axiosInstance.post("/auth/signup", data);
+      set({ authUser: res.data.user });
+      toast.success("Account created successfully!");
+      navigate("/"); 
     } catch (error) {
       toast.error(error.response?.data?.message || "Signup failed");
     } finally {
@@ -37,15 +36,16 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  login: async (data, navigate) => {
+  login: async (data) => {
     try {
+      //const navigate = useNavigate();
       set({ isLoggingIn: true });
       const res = await axiosInstance.post("/auth/login", data);
-      const { token, user } = res.data;
-      localStorage.setItem("token", token);
-      set({ authUser: user });
+      //const {user } = res.data;
+      console.log(res.data);
+      set({ authUser: res.data });
       toast.success("Login successful");
-      navigate("/analyze"); // redirect after login
+      // navigate("/"); // redirect after login
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {
@@ -56,7 +56,6 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      localStorage.removeItem("token");
       set({ authUser: null });
       toast.success("Logged out successfully");
     } catch (error) {

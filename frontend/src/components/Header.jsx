@@ -3,7 +3,16 @@ import { useAuthStore } from "../zustand/authStore";
 import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
-    const {authUser} = useAuthStore();
+    const {authUser,logout} = useAuthStore();
+    const logoutHandler = async(e)=>{
+        e.preventDefault();
+        try {
+            await logout();
+            
+        } catch (error) {
+            
+        }
+    }
     const navigate = useNavigate();
     return (
 
@@ -28,9 +37,9 @@ export const Header = () => {
     Get Started
   </button>
 
-  {!authUser && (
+  {authUser && (
     <button
-      
+      onClick={logoutHandler}
       className="bg-transparent text-[#64FFDA] border border-[#64FFDA] rounded-md px-4 py-2 hover:bg-[#64FFDA] hover:text-[#0A192F] transition-all duration-300"
     >
       Logout

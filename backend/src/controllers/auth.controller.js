@@ -1,78 +1,93 @@
-import User from "../models/user.model.js"; // make sure your user model exists
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { generateToken } from "../utils/generateToken.js";
+import User from "../models/user.model.js";
+import bcrypt from "bcryptjs"
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret123";
+export const register = async (req, res) => {
+    const { fullName, email, password } = req.body;
+    try {
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
+        const user = await User.findOne({ email });
+        if (user) return res.status(400).json({ message: "Email already exists" });
 
-// Signup
-export const signupUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const newUser = new User({
+            fullName,
+            email,
+            password: hashedPassword,
+        });
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "Email already registered" });
+        if (newUser) {
+            // generate jwt token here
+            generateToken(newUser._id, res);
+            await newUser.save();
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+            res.status(201).json({
+                _id: newUser._id,
+                fullName: newUser.fullName,
+                email: newUser.email,
+                profilePic: newUser.profilePic,
+            });
+        } else {
+            res.status(400).json({ message: "Invalid user data" });
+        }
 
-    const user = await User.create({ name, email, password: hashedPassword });
-
-    // Create token
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-
-    res.status(201).json({
-      user: { id: user._id, name: user.name, email: user.email },
-      token,
-      message: "Account created successfully",
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Login
-export const loginUser = async (req, res) => {
-  try {
+    } catch (error) {
+        console.log("Error in register controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+export const login = async (req, res) => {
     const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
 
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+        generateToken(user._id, res);
 
-    res.json({
-      user: { id: user._id, name: user.name, email: user.email },
-      token,
-      message: "Login successful",
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+        });
+    } catch (error) {
+        console.log("Error in login controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 };
 
-// Logout
-export const logoutUser = async (req, res) => {
-  // If using cookies: clear cookie
-  res.json({ message: "Logout successful" });
-};
+export const logout = async (req, res) => {
+    try {
+        
 
-// Get current user
-export const getMe = async (req, res) => {
+        res.clearCookie("jwt"); // simple
+        return res.status(200).json({ message: "Logged out" });
+    } catch (error) {
+        console.log("Error in logout controller", error.message);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+
+
+export const me = (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json(user);
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+    res.status(200).json(req.user);
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
