@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { UploadIcon } from "lucide-react";
 
 // Reuse the Icon and Button components from App
@@ -26,8 +26,22 @@ const Button = ({ children, onClick, variant = "primary", className = "" }) => {
   );
 };
 
-// ✅ Left Component — receives props from App.jsx
-const Left = ({ fileInputRef, handleFileChange, handleUpload, fileName }) => {
+// ✅ Left Component — receives props from Analyze.jsx
+const Left = ({ 
+  fileInputRef, 
+  handleFileChange, 
+  handleUpload, 
+  fileName, 
+  documents, 
+  selectedDocument, 
+  setSelectedDocument, 
+  isLoading, 
+  isUploading, 
+  explainDocument,
+  Button, 
+  Icon 
+}) => {
+  const [explainTopic, setExplainTopic] = useState("");
   return (
     <div className="w-full lg:w-1/4 xl:w-1/5 bg-[#2d3748] p-6 rounded-xl flex flex-col gap-8 shadow-lg">
       {/* Upload Section */}
@@ -48,26 +62,75 @@ const Left = ({ fileInputRef, handleFileChange, handleUpload, fileName }) => {
           <p className="text-sm">{fileName || "No file chosen"}</p>
         </div>
 
-        <Button onClick={handleUpload} className="w-full">
+        <Button onClick={handleUpload} className="w-full" disabled={isUploading || !fileName}>
           <UploadIcon className="w-5 h-5" />
-          Upload
+          {isUploading ? "Uploading..." : "Upload"}
         </Button>
       </div>
 
       {/* Documents Section */}
       <div>
         <h2 className="text-lg font-bold text-white mb-4">Documents</h2>
-        <div className="bg-[#1a202c] p-4 rounded-lg text-center text-gray-400 text-sm">
-          No documents yet
-        </div>
+        {isLoading ? (
+          <div className="bg-[#1a202c] p-4 rounded-lg text-center text-gray-400 text-sm">
+            Loading documents...
+          </div>
+        ) : documents.length > 0 ? (
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div
+                key={doc._id}
+                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                  selectedDocument?._id === doc._id
+                    ? "bg-[#00C49A] text-white"
+                    : "bg-[#1a202c] text-gray-400 hover:bg-gray-700"
+                }`}
+                onClick={() => setSelectedDocument(doc)}
+              >
+                <p className="text-sm font-medium truncate">{doc.originalFilename}</p>
+                <p className="text-xs opacity-75">
+                  {new Date(doc.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-[#1a202c] p-4 rounded-lg text-center text-gray-400 text-sm">
+            No documents yet
+          </div>
+        )}
       </div>
 
-      {/* Explain Button */}
+      {/* Explain Document Section */}
       <div>
-        <Button variant="secondary" className="w-full">
+        <h2 className="text-lg font-bold text-white mb-4">Explain Document</h2>
+        
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Enter topic to explain..."
+            value={explainTopic}
+            onChange={(e) => setExplainTopic(e.target.value)}
+            className="w-full bg-[#1a202c] border border-gray-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00C49A] text-sm"
+            disabled={isLoading || !selectedDocument}
+          />
+        </div>
+
+        <Button 
+          variant="secondary" 
+          className="w-full"
+          onClick={() => explainDocument(explainTopic)}
+          disabled={isLoading || !selectedDocument || !explainTopic.trim()}
+        >
           <Icon path="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-          Explain Document (MP3)
+          {isLoading ? "Generating..." : "Explain Document (MP3)"}
         </Button>
+        
+        {!selectedDocument && (
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Select a document first
+          </p>
+        )}
       </div>
     </div>
   );

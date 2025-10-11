@@ -1,9 +1,11 @@
 // src/pages/Analyze.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Left from "../components/analyze/Left";
 import Middle from "../components/analyze/Middle";
 import Right from "../components/analyze/Right";
-
+import { axiosInstance } from "../lib/axios";
+import { useAuthStore } from "../zustand/authStore";
+import toast from "react-hot-toast";
 // --- Helper Components ---
 
 export const Icon = ({ path, className = "w-6 h-6" }) => (
@@ -31,11 +33,138 @@ export const Button = ({ children, onClick, variant = "primary", className = "" 
 
 // --- Main Analyze Page ---
 const Analyze = () => {
+  const { authUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState("pdf"); // 'pdf' or 'summary'
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [explanation, setExplanation] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fetch user documents on component mount
+  useEffect(() => {
+    if (authUser?.username) {
+      fetchDocuments();
+    }
+  }, [authUser]);
+
+  // API Functions
+  const fetchDocuments = async () => {
+    if (!authUser?.username) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.get(`/document/documents/${authUser.username}`);
+      setDocuments(response.data);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast.error("Failed to fetch documents");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadDocument = async () => {
+    if (!selectedFile || !authUser?.fullName) {
+      toast.error("Please select a PDF file and ensure you're logged in");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("pdf", selectedFile);
+      formData.append("username", authUser.username);
+
+      const response = await axiosInstance.post("/document/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Document uploaded successfully!");
+      setSelectedDocument(response.data.document);
+      
+      // Refresh documents list
+      await fetchDocuments();
+      
+      // Create local URL for preview
+      const url = URL.createObjectURL(selectedFile);
+      setPdfUrl(url);
+      setActiveTab("pdf");
+      
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast.error("Failed to upload document");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const askQuestion = async (questionText) => {
+    const currentQuestion = questionText || question.trim();
+    const currentDocument = selectedDocument;
+    
+    if (!currentQuestion || !currentDocument?._id) {
+      toast.error("Please enter a question and select a document");
+      return null;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.post("/document/ask", {
+        question: currentQuestion,
+        documentId: currentDocument._id,
+      });
+
+      const answer = response.data.answer;
+      
+      // Update the main page state if called from Middle component
+      if (!questionText) {
+        setAnswer(answer);
+        toast.success("Question answered!");
+      }
+      
+      return answer;
+    } catch (error) {
+      console.error("Error asking question:", error);
+      toast.error("Failed to get answer");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const explainDocument = async (topic) => {
+    if (!topic.trim() || !selectedDocument?._id) {
+      toast.error("Please provide a topic and select a document");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.post("/document/explain", {
+        topic: topic.trim(),
+        documentId: selectedDocument._id,
+      });
+
+      setExplanation(response.data.explanation);
+      setAudioUrl(response.data.audioUrl);
+      toast.success("Explanation generated!");
+    } catch (error) {
+      console.error("Error generating explanation:", error);
+      toast.error("Failed to generate explanation");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -45,15 +174,12 @@ const Analyze = () => {
     } else {
       setSelectedFile(null);
       setFileName("");
+      toast.error("Please select a valid PDF file");
     }
   };
 
   const handleUpload = () => {
-    if (selectedFile) {
-      const url = URL.createObjectURL(selectedFile);
-      setPdfUrl(url);
-      setActiveTab("pdf");
-    }
+    uploadDocument();
   };
 
   return (
@@ -71,6 +197,12 @@ const Analyze = () => {
           handleFileChange={handleFileChange}
           handleUpload={handleUpload}
           fileName={fileName}
+          documents={documents}
+          selectedDocument={selectedDocument}
+          setSelectedDocument={setSelectedDocument}
+          isLoading={isLoading}
+          isUploading={isUploading}
+          explainDocument={explainDocument}
           Button={Button}
           Icon={Icon}
         />
@@ -80,12 +212,27 @@ const Analyze = () => {
           pdfUrl={pdfUrl}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          question={question}
+          setQuestion={setQuestion}
+          answer={answer}
+          explanation={explanation}
+          audioUrl={audioUrl}
+          askQuestion={askQuestion}
+          explainDocument={explainDocument}
+          isLoading={isLoading}
           Button={Button}
           Icon={Icon}
         />
 
         {/* Right Panel */}
-        <Right Button={Button} />
+        <Right 
+          documents={documents}
+          selectedDocument={selectedDocument}
+          setSelectedDocument={setSelectedDocument}
+          Button={Button}
+          askQuestion={askQuestion}
+          isLoading={isLoading}
+        />
       </main>
     </div>
   );

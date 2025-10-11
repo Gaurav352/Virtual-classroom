@@ -2,7 +2,21 @@
 import React from "react";
 
 // Accept props from Analyze.jsx
-const Middle = ({ pdfUrl, activeTab, setActiveTab, Button, Icon }) => {
+const Middle = ({ 
+  pdfUrl, 
+  activeTab, 
+  setActiveTab, 
+  question, 
+  setQuestion, 
+  answer, 
+  explanation, 
+  audioUrl, 
+  askQuestion, 
+  explainDocument, 
+  isLoading, 
+  Button, 
+  Icon 
+}) => {
   return (
     <div className="flex-1 bg-[#2d3748] p-6 rounded-xl flex flex-col shadow-lg min-h-[70vh]">
       {/* Tabs */}
@@ -50,31 +64,48 @@ const Middle = ({ pdfUrl, activeTab, setActiveTab, Button, Icon }) => {
           )
         ) : (
           <div className="text-center text-gray-400">
-            <Icon
-              path="M4 6h16v2H4zm0 4h16v2H4zm0 4h12v2H4z"
-              className="w-16 h-16 mx-auto mb-4"
-            />
-            <h3 className="text-xl font-semibold text-white">Document Summary</h3>
-            <p>The AI-generated summary will appear here.</p>
+            {explanation ? (
+              <div className="text-left">
+                <h3 className="text-xl font-semibold text-white mb-4">Document Explanation</h3>
+                <div className="bg-[#1a202c] p-4 rounded-lg mb-4">
+                  <p className="text-gray-300">{explanation}</p>
+                </div>
+                {audioUrl && (
+                  <div className="flex items-center justify-center gap-4">
+                    <audio controls className="w-full max-w-md">
+                      <source src={audioUrl} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Icon
+                  path="M4 6h16v2H4zm0 4h16v2H4zm0 4h12v2H4z"
+                  className="w-16 h-16 mx-auto mb-4"
+                />
+                <h3 className="text-xl font-semibold text-white">Document Summary</h3>
+                <p>The AI-generated summary will appear here.</p>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Audio / Transcript Controls */}
-      <div className="flex items-center justify-center gap-6 mt-4 text-gray-400">
-        <span className="text-xs">Transcript not available from backend.</span>
-        <div className="flex items-center gap-4">
-          <button className="p-2 rounded-full hover:bg-gray-700 transition-colors">
-            <Icon path="M8 5v14l11-7z" />
-          </button>
-          <button className="p-2 rounded-full hover:bg-gray-700 transition-colors">
-            <Icon path="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-          </button>
-          <Button variant="ghost" className="py-2 px-4 text-xs">
-            Copy audio URL
-          </Button>
+      
+
+      {/* Audio Controls */}
+      {audioUrl && (
+        <div className="flex items-center justify-center gap-6 mt-4 text-gray-400">
+          <span className="text-xs">Audio explanation available</span>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" className="py-2 px-4 text-xs">
+              Copy audio URL
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
